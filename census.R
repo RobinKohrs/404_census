@@ -26,6 +26,9 @@ if (!file.exists(destfile)) {
 # Read in CSV-File
 census = read.csv("data/raster/census/Zensus_klassierte_Werte_1km-Gitter.csv", sep = ";")
 
+# download German border polygon using "get data", which is also a function from the raster package
+ger = getData(country = "DEU", level = 0)
+
 
 # 13 Variables
 # for more than 13.000 Grid Cells
@@ -33,6 +36,7 @@ dim(census)
 
 # What are the variable names?
 names(census)
+
 
 
 # pop = population, hh_size = household size
@@ -65,3 +69,21 @@ for (i in names(rast_stack)) {
   values(rast_stack[[i]]) = as.factor(values(rast_stack[[i]]))
 }
 
+
+p_1 = spplot(rast_stack, col.regions = RColorBrewer::brewer.pal(6, "GnBu"),
+             main = list("Classes", cex = 0.5),
+             layout = c(4, 1),
+             # Leave some space between the panels
+             between = list(x = 0.5),
+             colorkey = list(space = "top", width = 0.8, height = 0.2,
+                             # make tick size smaller
+                             tck = 0.5,
+                             labels = list(cex = 0.4)),
+             strip = strip.custom(bg = "white",
+                                  par.strip.text = list(cex = 0.5),
+                                  factor.levels = c("population", "women",
+                                                    "mean age",
+                                                    "household size")),
+             sp.layout = list(
+               list("sp.polygons", ger, col = gray(0.5),
+                    first = FALSE)))
