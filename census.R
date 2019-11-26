@@ -8,6 +8,8 @@ library(tidyr)
 library(raster)
 library(sf)
 library(ggplot2)
+library(lattice)
+library(latticeExtra)
 
 # Link for data at 1km resolution
 url = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv_Zensusatlas_klassierte_Werte_1km_Gitter.zip;jsessionid=1C3BBC82F13D65F0DC4689BA428846F4.1_cid380?__blob=publicationFile&v=8"
@@ -69,21 +71,29 @@ for (i in names(rast_stack)) {
   values(rast_stack[[i]]) = as.factor(values(rast_stack[[i]]))
 }
 
+names(rast_stack)
 
-p_1 = spplot(rast_stack, col.regions = RColorBrewer::brewer.pal(6, "GnBu"),
-             main = list("Classes", cex = 0.5),
-             layout = c(4, 1),
-             # Leave some space between the panels
-             between = list(x = 0.5),
-             colorkey = list(space = "top", width = 0.8, height = 0.2,
-                             # make tick size smaller
-                             tck = 0.5,
-                             labels = list(cex = 0.4)),
-             strip = strip.custom(bg = "white",
-                                  par.strip.text = list(cex = 0.5),
-                                  factor.levels = c("population", "women",
-                                                    "mean age",
-                                                    "household size")),
-             sp.layout = list(
-               list("sp.polygons", ger, col = gray(0.5),
-                    first = FALSE)))
+
+# stack_1 = spplot(rast_stack, col.regions = RColorBrewer::brewer.pal(6, "GnBu"),
+#              main = list("Classes", cex = 0.5),
+#              layout = c(4, 1),
+#              # Leave some space between the panels
+#              between = list(x = 0.5),
+#              colorkey = list(space = "top", width = 0.8, height = 0.2,
+#                              # make tick size smaller
+#                              tck = 0.5,
+#                              labels = list(cex = 0.4)),
+#              strip = strip.custom(bg = "white",
+#                                   par.strip.text = list(cex = 0.5),
+#                                   factor.levels = c("Einwohner", "Anteil Frauen",
+#                                                     "Durchschn. Alter",
+#                                                     "HH Größe")),
+#              sp.layout = list(
+#                list("sp.polygons", ger, col = gray(0.5),
+#                     first = FALSE)))
+# stack_1
+
+# Subset Raster to extract Einwohenr
+rast_einwohner = raster::subset(rast_stack, "Einwohner")
+plot(rast_einwohner)
+
