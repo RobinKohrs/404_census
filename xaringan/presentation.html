@@ -67,6 +67,8 @@ class: center, middle, upper
 ]
   
 ---
+background-image: url(https://github.com/yihui/xaringan/releases/download/v0.0.2/karl-moustache.jpg)
+---
 
 # Wo bekommen man die Daten her?
 
@@ -91,17 +93,24 @@ url = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/Demogr
 
 ```r
 census = read.csv("../data/raster/census/Zensus_klassierte_Werte_1km-Gitter.csv", sep = ";")
-head(census)[1:5]
+str(census)
 ```
 
 ```
-##   Gitter_ID_1km x_mp_1km y_mp_1km Einwohner Frauen_A
-## 1 1kmN2684E4334  4334500  2684500        -1       -1
-## 2 1kmN2684E4335  4335500  2684500        -1       -1
-## 3 1kmN2684E4336  4336500  2684500        -1       -1
-## 4 1kmN2684E4337  4337500  2684500        -1       -1
-## 5 1kmN2684E4338  4338500  2684500        -1       -1
-## 6 1kmN2684E4339  4339500  2684500        -1       -1
+## 'data.frame':	361478 obs. of  13 variables:
+##  $ Gitter_ID_1km  : Factor w/ 361478 levels "1kmN2684E4334",..: 1 2 3 4 5 6 7 8 9 10 ...
+##  $ x_mp_1km       : int  4334500 4335500 4336500 4337500 4338500 4339500 4334500 4335500 4336500 4337500 ...
+##  $ y_mp_1km       : int  2684500 2684500 2684500 2684500 2684500 2684500 2685500 2685500 2685500 2685500 ...
+##  $ Einwohner      : int  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
+##  $ Frauen_A       : int  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
+##  $ Alter_D        : int  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
+##  $ unter18_A      : int  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
+##  $ ab65_A         : int  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
+##  $ Auslaender_A   : int  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
+##  $ HHGroesse_D    : int  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
+##  $ Leerstandsquote: int  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
+##  $ Wohnfl_Bew_D   : int  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
+##  $ Wohnfl_Whg_D   : int  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
 ```
 
 
@@ -109,29 +118,30 @@ head(census)[1:5]
 
 - Warum so viele `-1`
 
-
---
-
-
-```r
-names(census)
-```
-
-```
-##  [1] "Gitter_ID_1km"   "x_mp_1km"        "y_mp_1km"        "Einwohner"      
-##  [5] "Frauen_A"        "Alter_D"         "unter18_A"       "ab65_A"         
-##  [9] "Auslaender_A"    "HHGroesse_D"     "Leerstandsquote" "Wohnfl_Bew_D"   
-## [13] "Wohnfl_Whg_D"
-```
+- ...
 
 
----
-background-image: url(https://github.com/yihui/xaringan/releases/download/v0.0.2/karl-moustache.jpg)
+
 ---
 
 # Beschreibung des Datensatz
 
 ![plot](img/excel.png)
+
+---
+
+# Erster Eindruck der Daten
+
+
+```r
+# Umbenennen der Variablen
+census_new = dplyr::select(census, x = x_mp_1km, y = y_mp_1km, Einwohner,
+                      fr_a = Frauen_A, alt_d = Alter_D,
+                      hh_gr = HHGroesse_D, u_18 = unter18_A, ue65 = ab65_A,
+                      ausl = Auslaender_A, leer = Leerstandsquote)
+```
+
+
 
 
 # References

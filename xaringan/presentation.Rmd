@@ -81,7 +81,7 @@ url = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/Demogr
 
 ```{r}
 census = read.csv("../data/raster/census/Zensus_klassierte_Werte_1km-Gitter.csv", sep = ";")
-head(census)[1:5]
+str(census)
 ```
 
 
@@ -89,12 +89,8 @@ head(census)[1:5]
 
 - Warum so viele `-1`
 
+- ...
 
---
-
-```{r}
-names(census)
-```
 
 
 ---
@@ -102,6 +98,21 @@ names(census)
 # Beschreibung des Datensatz
 
 ![plot](img/excel.png)
+
+---
+
+# Erster Eindruck der Daten
+
+```{r}
+# Umbenennen der Variablen
+census_new = dplyr::select(census, x = x_mp_1km, y = y_mp_1km, Einwohner,
+                      fr_a = Frauen_A, alt_d = Alter_D,
+                      hh_gr = HHGroesse_D, u_18 = unter18_A, ue65 = ab65_A,
+                      ausl = Auslaender_A, leer = Leerstandsquote)
+
+```
+
+
 
 ---
 
