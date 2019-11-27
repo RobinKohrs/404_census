@@ -9,7 +9,9 @@ library(raster)
 library(sf)
 library(ggplot2)
 library(lattice)
-library(latticeExtra)
+library(leaflet)
+library(osmdata)
+library(tmap)
 
 # Link for data at 1km resolution
 url = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv_Zensusatlas_klassierte_Werte_1km_Gitter.zip;jsessionid=1C3BBC82F13D65F0DC4689BA428846F4.1_cid380?__blob=publicationFile&v=8"
@@ -97,3 +99,46 @@ names(rast_stack)
 rast_einwohner = raster::subset(rast_stack, "Einwohner")
 plot(rast_einwohner)
 
+
+###############################
+##  download clip shapefile  ##
+###############################
+
+ger_wgs = st_read("data/shape/ger_utm_wgs84/VG250_Bundeslaender.shp")
+ger_3035 = st_transform(ger_wgs, 3035)
+
+hamburg = ger_3035 %>% dplyr::filter(GEN == "Hamburg")
+plot(hamburg[0], axes = TRUE)
+
+hamburg2 = st_crop(hamburg, xmin = 4300000, ymin = 3360000, xmax = 4345000, ymax = 3410000)
+plot(hamburg2[0], border= "red", axes = T)
+
+hamburg3 = dplyr::select(hamburg2, geometry, GEN)
+
+
+####################
+##  Clip Hamburg  ##
+####################
+
+plot(hamburg2,
+     main = "Shapefile that'll be the crop extent",
+     axes = TRUE,
+     border = "blue",
+     col = NA)
+
+ger_crop = crop(rast_einwohner, extent(hamburg3))
+ham_mask = mask(ger_crop, hamburg3)
+plot(ham_mask)
+plot(hamburg3, border = "blue", lwd = 7, add = T, col = NA)
+
+
+###################
+##  leaflet map  ##
+###################
+
+class(ham_mask)
+crs(ham_mask, asText = FALSE)
+projectRaster()
+
+
+leaflet() %>%

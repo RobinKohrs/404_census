@@ -23,6 +23,7 @@ destfile = "data/shape/ger_utm_wgs84.zip"
 
 # Check if file already exists ------------------------------------------------
 if (!file.exists(destfile)) {
+  dir.create("data/shape")
   download.file(url ,destfile, mode='wb')} else {
     print("file already exists")
   }

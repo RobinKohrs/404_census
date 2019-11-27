@@ -1,0 +1,109 @@
+---
+title: "Raster Stack with german census data"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    nature:
+      titleslideClass: ["right", "top", "my-title"]
+      countIncrementalSlides: false
+    yolo: true
+---
+# Struktur der Präsentation
+
+--
+
+Was ist Xaringan?
+
+Was ist ein `RasterStack`?
+
+Was ist der Zensus?
+
+Wie sieht die Datenlage aus?
+
+Anwendungsbeispiel
+
+---
+
+# Was ist Xaringan ?
+ 
+- xaringan-package von Xie (2019) <sup>1</sup>
+
+- "An R package for creating HTML5 presentations with remark.js through R Markdown." <sup>2</sup>
+
+- remark.js benutzt nicht Pandoc, sondern rendert Markdown in *real time* im Browser
+
+- große stilistische Freiheiten (wenn man CSS kann)
+
+- Xaringan generiert keine *Self-Contained* Präsentationen 
+.footnote[
+[1] [xie 2019](https://CRAN.R-project.org/package=xaringan) <br>
+[2] [https://arm.rbind.io/slides/xaringan.html#17](https://arm.rbind.io/slides/xaringan.html#17)
+]
+
+---
+
+# Was ist der Zensus?
+
+
+
+---
+
+class: center, middle, upper
+
+# Was ist ein `RasterStack` ?
+
+>  "RasterStack is a list of RasterLayer objects with the same extent and resolution" <sup>1</sup>
+
+.footnote[
+[1] [Lovelace et al. 2018 S: ]()
+]
+  
+---
+
+# Wo bekommen man die Daten her?
+
+```{r}
+# Link for data at 1km resolution
+url = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv_Zensusatlas_klassierte_Werte_1km_Gitter.zip;jsessionid=1C3BBC82F13D65F0DC4689BA428846F4.1_cid380?__blob=publicationFile&v=8"
+```
+
+- 1km vs. 100m
+
+
+---
+
+# Was laden wir uns da eigentlich runter?
+
+- `Datensatzbeschreibung_klassifizierter_Werte_1km-Gitter.xlsx`
+- `Zensus_klassifizierte_Werte_1km-Gitter.csv`
+
+---
+
+```{r}
+census = read.csv("../data/raster/census/Zensus_klassierte_Werte_1km-Gitter.csv", sep = ";")
+head(census)[1:5]
+```
+
+
+- Was sind das für Werte bei *x_mp_1km* und *y_mp_1km* ?
+
+- Warum so viele `-1`
+
+
+--
+
+```{r}
+names(census)
+```
+
+
+---
+
+# Beschreibung des Datensatz
+
+![plot](img/excel.png)
+
+---
+
+# References
+
