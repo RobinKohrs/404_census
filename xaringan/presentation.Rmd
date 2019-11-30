@@ -263,7 +263,8 @@ knitr::include_graphics("img/alt_raster.png")
 # Leaflet
 
 ```{r, echo=FALSE}
-pal <- colorNumeric("RdYlBu", values(alt), na.color = "transparent")
+pal=viridis(5)
+
 
 leaflet() %>%
   addProviderTiles('Esri.WorldImagery',group='Imagery') %>%
@@ -276,16 +277,16 @@ leaflet() %>%
     options = layersControlOptions(collapsed = FALSE)
   ) %>%
   hideGroup(c("alt", "jung")) %>% 
-  addLegend(pal = pal, values = getValues(alt))
+  addLegend(colors = pal, labels = levels(alt)[[1]]$percentage)
 ```
 
 ---
 
 # Mapview 
 
-```{r}
+```{r, echo=FALSE}
 library(mapview)
-mapview(alt) + mapview(jung) +mapview(hamburg)
+mapview(alt, col.regions = pal) + mapview(jung, col.regions = pal) + mapview(hamburg)
 ```
 
 ---
@@ -305,20 +306,70 @@ ham_mask_100m = mask(ham_crop, hamburg_crop_sf)
 ```
 
 ```{r, echo=FALSE}
-mapview(ham_mask_100m, col.regions = viridis_pal())
+mapview(ham_mask_100m)
 ```
+
+---
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# get values from single RasterLayer
+vals = values(ham_mask_100m)
+
+
+# get 5 highest values 
+val_cells = values(ham_mask_100m)
+top_5 = tail(sort(val_cells), 5)
+
+# make point df
+outlier = data.frame( x = top_5, y = rep(0, 5))
+
+ g = ggplot() +
+  geom_histogram(aes(vals)) +
+  xlab("Einwohner pro 100m x 100m Gitterzelle") +
+  ylab("Anzahl an Zellen") +
+  ggtitle("Histogram of Raster") +
+  theme_minimal()
+ 
+ g + geom_point(data = outlier, mapping = aes(x =x, y = y, color = factor(x))) +
+   theme(legend.title = element_text()) +
+   scale_colour_discrete(name = "Outlier")
+   
+```
+
+---
+
+```{r,echo=FALSE}
+# Set all Values over 600 to NA
+cell_vals = values(ham_mask_100m)
+cell_vals[cell_vals > 600] = NA
+values(ham_mask_100m) = cell_vals
+
+mapview(ham_mask_100m)
+```
+
 
 ---
 
 # ggplot2 for Raster plotting
 
 ```{r, echo=FALSE}
+# Convert Raster to dataframe in order to plot withh ggplot
 ham_df <- as.data.frame(ham_mask_100m, xy = TRUE)
+
 ggplot() +
     geom_raster(data = ham_df , aes(x = x, y = y, fill = gridcell_100m)) +
     scale_fill_viridis_c() +
     coord_quickmap()
 ```
+
+---
+
+# Tmap
+
+```{r}
+
+```
+
 
 ---
 
