@@ -15,12 +15,15 @@ library(dplyr)
 library(tidyr)
 library(raster)
 library(sf)
+library(sp)
 library(ggplot2)
 library(lattice)
 library(leaflet)
 library(osmdata)
 library(tmap)
-
+library(here)
+library(rasterVis)
+library(viridis)
 ```
 
 
@@ -106,7 +109,7 @@ str(census)
 
 ---
 
-# Erster Eindruck der Daten
+# Vorprozessierung der Daten
 
 - Abkürzungen für Variablen
 
@@ -131,7 +134,7 @@ census_clean = dplyr::mutate_all(census_new, ~ifelse(. %in% c(-1, -9), NA, .))
 
 ---
 
-## RasterBrick
+## Von .csv zu `raster.stack` ?
 
 ```{r}
 # make it a RasterBrick
@@ -140,21 +143,36 @@ rast_brick = rasterFromXYZ(census_clean, crs = st_crs(3035)$proj4string)
 
 
 ```{r}
-writeRaster(rast_brick, "data/raster/tif/gridcell1km.grd", overwrite = T, byLayer = TRUE, format = "GTiff")
+writeRaster(rast_brick, "../data/raster/tif/gridcell1km.grd", mode = "wb", overwrite = T, format = "raster")
 
-ger_stack = stack("data/raster/tif/gridcell1km.grd")
+ger_stack = stack("../data/raster/tif/gridcell1km.grd")
 ```
 
 
 ```{r}
-class(rast_brick)
+class(ger_stack)
+```
+---
+
+```{r}
+for (i in names(ger_stack)) {
+  ger_stack[[i]] = ratify(ger_stack[[i]])
+  values(ger_stack[[i]]) = as.factor(values(ger_stack[[i]]))
+}
 ```
 
---
+```{r}
+ger_stack
+```
 
-## Was ist ein `RasterBrick` ? <sub>1</sub>
+
+
+---
+
+## `RasterStack` und `RasterBrick` ? <sub>1</sub>
  
 - `RasterBrick` kann nur eine (multilyer-) Datei als Quelle haben 
+- `RasterStack` kann aus verschiedenen Datein (Layern) zusammengestellt werden
 - Funtionen, die mit `RasterStack` und `RasterBrick` arbeiten können, geben normalerweise einen `RasterBrick` zurück
 
 .footnote[
@@ -163,43 +181,146 @@ class(rast_brick)
 
 ---
 
-## Wir groß ist meine Datei?
-```{r}
-inMemory(rast_brick)
-```
--- 
-```{r}
-# Dateigröße der CSV-Datei
-file.size("../data/raster/census/Zensus_klassierte_Werte_1km-Gitter.csv")
-```
---
-```{r}
-# Objektgrößte des RasterBrick
-```
-
-
-```{r}
-object.size(rast_brick)
-```
-
-
----
-```{r plotbrick}
-# Plot with generic plot function
-plot(rast_brick)
-```
----
 
 ## Interaktives croppen eines rasters
 `
-s = raster::select(rast_brick)
+s = raster::select(ger_stack)
 `
+
+---
+
+# Croppen und Masken mittels eines Shapefiles
+
+```{r results='hide'}
+ger_wgs = st_read("../data/shape/ger_utm_wgs84/VG250_Bundeslaender.shp")
+ger_3035 = st_transform(ger_wgs, 3035)
+hamburg = ger_3035 %>% dplyr::filter(GEN == "Hamburg")
+```
+
+
+![Hamburg mit](img/hamburg.png)
+
+---
+
+# Crop the shapefile
+
+```{r, include=FALSE}
+hamburg_crop_sf = st_read("../data/shape/hamburg.shp")
+hamburg_crop_sp= as(hamburg_crop_sf, Class = "Spatial")
+
+```
+
+![hamburg](img/hamburg_crop.png)
+
+---
+
+```{r, include=FALSE}
+ham_crop = crop(x = ger_stack, y = extent(hamburg_crop_sp))
+ham_mask = mask(ham_crop, hamburg_crop_sf)
+
+plot(ham_mask)
+```
 
 
 ---
 
-# RasterStack
+```{r, include = FALSE}
+layers = c("u_18", "ue65")
+ind = which(names(ham_mask) == layers)
+alter = raster::subset(ham_mask, ind)
+alt = raster::subset(ham_mask, "ue65")
+jung = raster::subset(ham_mask, "u_18")
+```
 
+```{r}
+knitr::include_graphics("img/alter_raster.png")
+```
+
+
+---
+
+```{r, include=FALSE}
+# add percentage to rat of alt
+levels(alt)[[1]] = cbind(levels(alter)[[1]], percentage = c("0", "0-15", "15-20", "20-25", ">25"))
+
+# add percentage to rat of jung
+levels(jung)[[1]] = cbind(levels(alter)[[1]], percentage = c("0", "0-15", "15-20", "20-25", ">25"))
+
+```
+
+
+```{r echo = FALSE}
+knitr::include_graphics("img/jung.png")
+```
+---
+
+```{r, echo = FALSE}
+knitr::include_graphics("img/alt_raster.png")
+```
+
+
+---
+# Leaflet
+
+```{r, echo=FALSE}
+pal <- colorNumeric("RdYlBu", values(alt), na.color = "transparent")
+
+leaflet() %>%
+  addProviderTiles('Esri.WorldImagery',group='Imagery') %>%
+  addProviderTiles('Esri.WorldStreetMap', group='Streets') %>%
+  addRasterImage(alt, colors = pal, opacity = 0.7, group = "alt") %>%
+  addRasterImage(jung, colors = pal, opacity = 0.7, group = "jung") %>%
+  addLayersControl(
+    baseGroups = c("Imagery", "Streets"),
+    overlayGroups = c("alt", "jung"),
+    options = layersControlOptions(collapsed = FALSE)
+  ) %>%
+  hideGroup(c("alt", "jung")) %>% 
+  addLegend(pal = pal, values = getValues(alt))
+```
+
+---
+
+# Mapview 
+
+```{r}
+library(mapview)
+mapview(alt) + mapview(jung) +mapview(hamburg)
+```
+
+---
+# Use the 100m grid-cell resolution data
+
+```{r, include=FALSE}
+# Read in 100m grid-cell raster
+ger_100m = raster("../data/raster/tif/gridcell_100m.tif")
+object.size(ger_100m)
+file.size("../data/raster/tif/gridcell_100m.tif")
+```
+
+
+```{r, include=FALSE}
+ham_crop = crop(x = ger_100m, y = extent(hamburg_crop_sp))
+ham_mask_100m = mask(ham_crop, hamburg_crop_sf)
+```
+
+```{r, echo=FALSE}
+mapview(ham_mask_100m, col.regions = viridis_pal())
+```
+
+---
+
+# ggplot2 for Raster plotting
+
+```{r, echo=FALSE}
+ham_df <- as.data.frame(ham_mask_100m, xy = TRUE)
+ggplot() +
+    geom_raster(data = ham_df , aes(x = x, y = y, fill = gridcell_100m)) +
+    scale_fill_viridis_c() +
+    coord_quickmap()
+```
+
+---
 
 # References
 
