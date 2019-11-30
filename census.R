@@ -45,23 +45,18 @@ names(census)
 
 # pop = population, hh_size = household size
 input = dplyr::select(census, x = x_mp_1km, y = y_mp_1km, Einwohner,
-                      Frauen_A, Alter_D,
-                      hh_gr = HHGroesse_D)
+                      fr_a = Frauen_A, alt_d = Alter_D,
+                      hh_gr = HHGroesse_D, u_18 = unter18_A, ue65 = ab65_A,
+                      ausl = Auslaender_A, leer = Leerstandsquote)
 
 
-summary(input[1:5])
+names(input)
 
 # Encode all NAs
 input_tidy = mutate_all(input, list(~ifelse(. %in% c(-1, -9), NA, .)))
 
-# Convert it into rasterstack
+# Convert it into rasterbrick
 rast_brick = rasterFromXYZ(input_tidy, crs = st_crs(3035)$proj4string)
-
-# How many NAs are still there
-summary(rast)
-ok = complete.cases(input_tidy)
-class(ok)
-sum(!ok)
 
 # Convert Brick into Stack
 rast_stack = stack(rast_brick)
@@ -74,26 +69,6 @@ for (i in names(rast_stack)) {
 }
 
 names(rast_stack)
-
-
-# stack_1 = spplot(rast_stack, col.regions = RColorBrewer::brewer.pal(6, "GnBu"),
-#              main = list("Classes", cex = 0.5),
-#              layout = c(4, 1),
-#              # Leave some space between the panels
-#              between = list(x = 0.5),
-#              colorkey = list(space = "top", width = 0.8, height = 0.2,
-#                              # make tick size smaller
-#                              tck = 0.5,
-#                              labels = list(cex = 0.4)),
-#              strip = strip.custom(bg = "white",
-#                                   par.strip.text = list(cex = 0.5),
-#                                   factor.levels = c("Einwohner", "Anteil Frauen",
-#                                                     "Durchschn. Alter",
-#                                                     "HH Größe")),
-#              sp.layout = list(
-#                list("sp.polygons", ger, col = gray(0.5),
-#                     first = FALSE)))
-# stack_1
 
 # Subset Raster to extract Einwohenr
 rast_einwohner = raster::subset(rast_stack, "Einwohner")
@@ -120,7 +95,7 @@ hamburg3 = dplyr::select(hamburg2, geometry, GEN)
 ##  Clip Hamburg  ##
 ####################
 
-plot(hamburg2,
+plot(hamburg3,
      main = "Shapefile that'll be the crop extent",
      axes = TRUE,
      border = "blue",
@@ -132,13 +107,31 @@ plot(ham_mask)
 plot(hamburg3, border = "blue", lwd = 7, add = T, col = NA)
 
 
+recl_einw_hamburg = reclassify(x = ham_mask, rcl = rcl_pop, right = NA)
+
+
+
+
 ###################
 ##  leaflet map  ##
 ###################
+#
+# newproj <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +ellps=WGS84"
+# ham_wgs84 = projectRaster(ham_mask, crs=newproj)
 
-class(ham_mask)
-crs(ham_mask, asText = FALSE)
-projectRaster()
+pal <- colorNumeric(c("#00ff00", "#ffff00", "#ff0000"), values(recl_einw_hamburg),
+                    na.color = "transparent")
 
 
 leaflet() %>%
+  addProviderTiles('Esri.WorldImagery',group='Imagery') %>%
+  addProviderTiles('Esri.WorldStreetMap', group='Streets') %>%
+  addRasterImage(recl_einw_hamburg, colors = pal, opacity = 0.7, group = "A") %>%
+  addLayersControl(
+    baseGroups = c("Imagery", "Streets"),
+    overlayGroups = c("Hamburg Einwohner"),
+    options = layersControlOptions(collapsed = FALSE)
+  ) %>%
+  addLegend(pal = pal, values = getValues(recl_einw_hamburg))
+
+getValues(recl_einw_hamburg)

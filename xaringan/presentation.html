@@ -3,7 +3,7 @@
   <head>
     <title>Raster Stack with german census data</title>
     <meta charset="utf-8" />
-    <meta name="date" content="2019-11-27" />
+    <meta name="date" content="2019-11-30" />
     <link href="presentation_files/remark-css-0.0.1/default.css" rel="stylesheet" />
     <link href="presentation_files/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
   </head>
@@ -12,11 +12,14 @@
 class: center, middle, inverse, title-slide
 
 # Raster Stack with german census data
-### 2019-11-27
+### 2019-11-30
 
 ---
 
 # Struktur der Präsentation
+
+
+
 
 --
 
@@ -67,8 +70,6 @@ class: center, middle, upper
 ]
   
 ---
-background-image: url(https://github.com/yihui/xaringan/releases/download/v0.0.2/karl-moustache.jpg)
----
 
 # Wo bekommen man die Daten her?
 
@@ -78,15 +79,7 @@ background-image: url(https://github.com/yihui/xaringan/releases/download/v0.0.2
 url = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv_Zensusatlas_klassierte_Werte_1km_Gitter.zip;jsessionid=1C3BBC82F13D65F0DC4689BA428846F4.1_cid380?__blob=publicationFile&amp;v=8"
 ```
 
-- 1km vs. 100m
-
-
----
-
-# Was laden wir uns da eigentlich runter?
-
-- `Datensatzbeschreibung_klassifizierter_Werte_1km-Gitter.xlsx`
-- `Zensus_klassifizierte_Werte_1km-Gitter.csv`
+- 1km vs. 100m ?
 
 ---
 
@@ -121,7 +114,6 @@ str(census)
 - ...
 
 
-
 ---
 
 # Beschreibung des Datensatz
@@ -132,16 +124,83 @@ str(census)
 
 # Erster Eindruck der Daten
 
+- Abkürzungen für Variablen
+
 
 ```r
 # Umbenennen der Variablen
+# X undd Y in erste beiden Spalten
 census_new = dplyr::select(census, x = x_mp_1km, y = y_mp_1km, Einwohner,
                       fr_a = Frauen_A, alt_d = Alter_D,
                       hh_gr = HHGroesse_D, u_18 = unter18_A, ue65 = ab65_A,
                       ausl = Auslaender_A, leer = Leerstandsquote)
 ```
 
+--
 
+- Fehlende Daten richtig in R codieren
+
+
+```r
+# Encode all NAs
+census_clean = dplyr::mutate_all(census_new, ~ifelse(. %in% c(-1, -9), NA, .))
+```
+
+---
+
+## RasterBrick
+
+
+```r
+# make it a RasterBrick
+rast_brick = rasterFromXYZ(census_clean, crs = st_crs(3035)$proj4string)
+```
+
+
+```r
+class(rast_brick)
+```
+
+```
+## [1] "RasterBrick"
+## attr(,"package")
+## [1] "raster"
+```
+
+--
+
+## Was ist ein `RasterBrick` ?
+ 
+- `RasterBrick` kann nur eine (multilyer-) Datei als Quelle haben &lt;sub&gt;1&lt;/sub&gt;
+- Funtionen, die mit `RasterStack` und `RasterBrick` arbeiten können, geben normalerweise einen `RasterBrick` zurück
+
+.footnote[
+[1] [Hijmans, 2019](https://rspatial.org/raster/spatial/4-rasterdata.html)
+]
+
+---
+
+```r
+# Plot with generic plot function
+plot(rast_brick)
+```
+
+![](presentation_files/figure-html/plotbrick-1.png)&lt;!-- --&gt;
+---
+
+# `raster::select()`
+
+`
+s = raster::select(rast_brick)
+`
+
+
+
+---
+background-image: url(https://github.com/yihui/xaringan/releases/download/v0.0.2/karl-moustache.jpg)
+---
+
+## RasterStack
 
 
 # References

@@ -10,6 +10,20 @@ output:
 ---
 # Struktur der Präsentation
 
+```{r libs, include=FALSE}
+library(dplyr)
+library(tidyr)
+library(raster)
+library(sf)
+library(ggplot2)
+library(lattice)
+library(leaflet)
+library(osmdata)
+library(tmap)
+
+```
+
+
 --
 
 Was ist Xaringan?
@@ -62,20 +76,12 @@ class: center, middle, upper
 
 # Wo bekommen man die Daten her?
 
-```{r}
+```{r, eval = FALSE}
 # Link for data at 1km resolution
 url = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv_Zensusatlas_klassierte_Werte_1km_Gitter.zip;jsessionid=1C3BBC82F13D65F0DC4689BA428846F4.1_cid380?__blob=publicationFile&v=8"
 ```
 
-- 1km vs. 100m
-
-
----
-
-# Was laden wir uns da eigentlich runter?
-
-- `Datensatzbeschreibung_klassifizierter_Werte_1km-Gitter.xlsx`
-- `Zensus_klassifizierte_Werte_1km-Gitter.csv`
+- 1km vs. 100m ?
 
 ---
 
@@ -92,7 +98,6 @@ str(census)
 - ...
 
 
-
 ---
 
 # Beschreibung des Datensatz
@@ -103,8 +108,11 @@ str(census)
 
 # Erster Eindruck der Daten
 
-```{r}
+- Abkürzungen für Variablen
+
+```{r select}
 # Umbenennen der Variablen
+# X undd Y in erste beiden Spalten
 census_new = dplyr::select(census, x = x_mp_1km, y = y_mp_1km, Einwohner,
                       fr_a = Frauen_A, alt_d = Alter_D,
                       hh_gr = HHGroesse_D, u_18 = unter18_A, ue65 = ab65_A,
@@ -112,9 +120,86 @@ census_new = dplyr::select(census, x = x_mp_1km, y = y_mp_1km, Einwohner,
 
 ```
 
+--
+
+- Fehlende Daten richtig in R codieren
+
+```{r mutate}
+# Encode all NAs
+census_clean = dplyr::mutate_all(census_new, ~ifelse(. %in% c(-1, -9), NA, .))
+```
+
+---
+
+## RasterBrick
+
+```{r}
+# make it a RasterBrick
+rast_brick = rasterFromXYZ(census_clean, crs = st_crs(3035)$proj4string)
+```
+
+
+```{r}
+writeRaster(rast_brick, "data/raster/tif/gridcell1km.grd", overwrite = T, byLayer = TRUE, format = "GTiff")
+
+ger_stack = stack("data/raster/tif/gridcell1km.grd")
+```
+
+
+```{r}
+class(rast_brick)
+```
+
+--
+
+## Was ist ein `RasterBrick` ? <sub>1</sub>
+ 
+- `RasterBrick` kann nur eine (multilyer-) Datei als Quelle haben 
+- Funtionen, die mit `RasterStack` und `RasterBrick` arbeiten können, geben normalerweise einen `RasterBrick` zurück
+
+.footnote[
+[1] [Hijmans, 2019](https://rspatial.org/raster/spatial/4-rasterdata.html)
+]
+
+---
+
+## Wir groß ist meine Datei?
+```{r}
+inMemory(rast_brick)
+```
+-- 
+```{r}
+# Dateigröße der CSV-Datei
+file.size("../data/raster/census/Zensus_klassierte_Werte_1km-Gitter.csv")
+```
+--
+```{r}
+# Objektgrößte des RasterBrick
+```
+
+
+```{r}
+object.size(rast_brick)
+```
 
 
 ---
+```{r plotbrick}
+# Plot with generic plot function
+plot(rast_brick)
+```
+---
+
+## Interaktives croppen eines rasters
+`
+s = raster::select(rast_brick)
+`
+
+
+---
+
+# RasterStack
+
 
 # References
 
