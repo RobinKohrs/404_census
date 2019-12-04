@@ -16,7 +16,9 @@ if (!file.exists(destfile)) {
     }
 
 # Read in CSV-File
+# Warum wird das Objekt drei mal größer wenn ich es reinlade?
 census100 = read.csv("data/raster/census_100m/Zensus_Bevoelkerung_100m-Gitter.csv", sep = ";")
+object.size(census100)
 
 # Check names
 class(census100)

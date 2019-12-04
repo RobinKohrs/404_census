@@ -52,10 +52,28 @@ Anwendungsbeispiel
 - große stilistische Freiheiten (wenn man CSS kann)
 
 - Xaringan generiert keine *Self-Contained* Präsentationen 
+
+- `Infitnite Moon Reader` RStudio Add In
 .footnote[
 [1] [xie 2019](https://CRAN.R-project.org/package=xaringan) <br>
 [2] [https://arm.rbind.io/slides/xaringan.html#17](https://arm.rbind.io/slides/xaringan.html#17)
 ]
+
+---
+
+background-image: url(https://user-images.githubusercontent.com/163582/53144527-35f7a500-3562-11e9-862e-892d3fd7036d.gif)
+background-position: 50% 60%
+background-size: 80%
+
+## How to Build Presentations in RStuido with xaringan
+
+
+.footnote[
+
+Source: [Xie, Y. (2019). The Ultimate Infinite Moon Reader for xaringan Slides](https://yihui.name/en/2019/02/ultimate-inf-mr/)
+
+]
+
 
 ---
 
@@ -79,12 +97,19 @@ class: center, middle, upper
 
 # Wo bekommen man die Daten her?
 
+100m
 ```{r, eval = FALSE}
 # Link for data at 1km resolution
-url = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv_Zensusatlas_klassierte_Werte_1km_Gitter.zip;jsessionid=1C3BBC82F13D65F0DC4689BA428846F4.1_cid380?__blob=publicationFile&v=8"
+url_1km = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv_Zensusatlas_klassierte_Werte_1km_Gitter.zip;jsessionid=1C3BBC82F13D65F0DC4689BA428846F4.1_cid380?__blob=publicationFile&v=8"
 ```
 
-- 1km vs. 100m ?
+oder
+
+1km 
+```{r eval = FALSE}
+url_100m = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv_Bevoelkerung_100m_Gitter.zip?__blob=publicationFile&v=3"
+```
+
 
 ---
 
@@ -98,8 +123,9 @@ str(census)
 
 - Warum so viele `-1`
 
-- ...
+- Frauen_A ?
 
+- ...
 
 ---
 
@@ -134,17 +160,27 @@ census_clean = dplyr::mutate_all(census_new, ~ifelse(. %in% c(-1, -9), NA, .))
 
 ---
 
-## Von .csv zu `raster.stack` ?
+## Von .csv zu RasterStack
+
+```{r}
+names(st_crs(3035))
+```
 
 ```{r}
 # make it a RasterBrick
 rast_brick = rasterFromXYZ(census_clean, crs = st_crs(3035)$proj4string)
 ```
 
+```{r}
+class(rast_brick)
+```
+---
 
 ```{r}
+# Write Raster
 writeRaster(rast_brick, "../data/raster/tif/gridcell1km.grd", mode = "wb", overwrite = T, format = "raster")
 
+# Read RasterStack
 ger_stack = stack("../data/raster/tif/gridcell1km.grd")
 ```
 
@@ -153,6 +189,8 @@ ger_stack = stack("../data/raster/tif/gridcell1km.grd")
 class(ger_stack)
 ```
 ---
+
+
 
 ```{r}
 for (i in names(ger_stack)) {
@@ -164,15 +202,20 @@ for (i in names(ger_stack)) {
 ```{r}
 ger_stack
 ```
+```{r}
+nlayers(ger_stack)
+```
 
 
 
 ---
 
-## `RasterStack` und `RasterBrick` ? <sub>1</sub>
+## RasterStack und RasterBrick <sub>1</sub>
  
 - `RasterBrick` kann nur eine (multilyer-) Datei als Quelle haben 
+
 - `RasterStack` kann aus verschiedenen Datein (Layern) zusammengestellt werden
+
 - Funtionen, die mit `RasterStack` und `RasterBrick` arbeiten können, geben normalerweise einen `RasterBrick` zurück
 
 .footnote[
@@ -181,13 +224,22 @@ ger_stack
 
 ---
 
+```{r}
+plot(ger_stack[["Einwohner"]])
+```
 
-## Interaktives croppen eines rasters
-`
-s = raster::select(ger_stack)
-`
 
 ---
+
+# Interaktives croppen eines rasters
+
+s = raster::select(ger_stack)
+
+url(https://gph.is/g/amnjeOy)
+
+
+---
+
 
 # Croppen und Masken mittels eines Shapefiles
 
@@ -196,7 +248,7 @@ ger_wgs = st_read("../data/shape/ger_utm_wgs84/VG250_Bundeslaender.shp")
 ger_3035 = st_transform(ger_wgs, 3035)
 hamburg = ger_3035 %>% dplyr::filter(GEN == "Hamburg")
 ```
-
+---
 
 ![Hamburg mit](img/hamburg.png)
 
