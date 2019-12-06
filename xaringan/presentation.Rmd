@@ -137,7 +137,7 @@ str(census)
 
 # Vorprozessierung der Daten
 
-- Abkürzungen für Variablen
+- Kodierung und Auswahl der Variablen
 
 ```{r select}
 # Umbenennen der Variablen
@@ -202,10 +202,10 @@ for (i in names(ger_stack)) {
 ```{r}
 ger_stack
 ```
-```{r}
+```{r nlayers}
 nlayers(ger_stack)
+res(ger_stack)
 ```
-
 
 
 ---
@@ -224,18 +224,16 @@ nlayers(ger_stack)
 
 ---
 
-```{r}
+```{r plot}
 plot(ger_stack[["Einwohner"]])
 ```
 
 
 ---
 
-# Interaktives croppen eines rasters
+# Interaktives Croppen
 
-s = raster::select(ger_stack)
-
-url(https://gph.is/g/amnjeOy)
+![video](video.gif)
 
 
 ---
@@ -248,13 +246,14 @@ ger_wgs = st_read("../data/shape/ger_utm_wgs84/VG250_Bundeslaender.shp")
 ger_3035 = st_transform(ger_wgs, 3035)
 hamburg = ger_3035 %>% dplyr::filter(GEN == "Hamburg")
 ```
----
 
 ![Hamburg mit](img/hamburg.png)
 
+
+
 ---
 
-# Crop the shapefile
+# Crop-Feature
 
 ```{r, include=FALSE}
 hamburg_crop_sf = st_read("../data/shape/hamburg.shp")
@@ -266,10 +265,48 @@ hamburg_crop_sp= as(hamburg_crop_sf, Class = "Spatial")
 
 ---
 
-```{r, include=FALSE}
-ham_crop = crop(x = ger_stack, y = extent(hamburg_crop_sp))
-ham_mask = mask(ham_crop, hamburg_crop_sf)
+```{r, echo=FALSE}
+pal=viridis(5)
 
+einwohner = raster::subset(ger_stack, "Einwohner")
+
+hamburg_wgs = st_transform(hamburg_crop_sf, 4326)
+
+
+leaflet() %>%
+  setView(10, 53.6, zoom = 9) %>% 
+  addProviderTiles('Stamen.Terrain',group='Stamen Terrain') %>%
+  addRasterImage(einwohner , colors = pal, opacity = 0.6, group = "Einwohner") %>%
+  addPolygons(data = hamburg_wgs, group = "Hamburg", color = "red") %>% 
+  addLayersControl(
+    baseGroups = c("Stamen Terrain"),
+    overlayGroups = c("Einwohner", "Hamburg"),
+    options = layersControlOptions(collapsed = FALSE)) %>% 
+   hideGroup(c("Einwohner")) 
+  
+  
+```
+
+---
+
+# Modyfying a raster in R: Crop und Mask <sub>1</sub>
+
+-- 
+
+- `crop()`: erstellt Subset von einem `raster`-Object auf der Basis des `extent` eines `raster*`, `sf` oder `sp`-objekt
+
+--
+
+- `mask()`: verwirft alle Zellen in einem `Raster*`-Objekt, die `NA` in einem anderen sind. 
+
+.footnote[
+[1][Hijmans, R J (2019)](https://rspatial.org/raster/spatial/8-rastermanip.html)
+]
+---
+
+```{r, echo=FALSE}
+ham_crop = crop(x = ger_stack, y = extent(hamburg_crop_sf))
+ham_mask = mask(ham_crop, hamburg_crop_sf)
 plot(ham_mask)
 ```
 
@@ -291,7 +328,9 @@ knitr::include_graphics("img/alter_raster.png")
 
 ---
 
-```{r, include=FALSE}
+# RAT
+
+```{r}
 # add percentage to rat of alt
 levels(alt)[[1]] = cbind(levels(alter)[[1]], percentage = c("0", "0-15", "15-20", "20-25", ">25"))
 
@@ -300,6 +339,14 @@ levels(jung)[[1]] = cbind(levels(alter)[[1]], percentage = c("0", "0-15", "15-20
 
 ```
 
+
+> "a RasterLayer is linked to other values via a "Raster Attribute Table" (RAT). Thus the cell values are an index, whereas the **actual values of interest** are in the RAT. The RAT is a data.frame." <sub>1</sub>
+
+.footnote[
+[1][Hijmans, R J](https://cran.r-project.org/web/packages/raster/raster.pdf)
+]
+
+---
 
 ```{r echo = FALSE}
 knitr::include_graphics("img/jung.png")
@@ -332,14 +379,24 @@ leaflet() %>%
   addLegend(colors = pal, labels = levels(alt)[[1]]$percentage)
 ```
 
----
-
 # Mapview 
 
 ```{r, echo=FALSE}
 library(mapview)
 mapview(alt, col.regions = pal) + mapview(jung, col.regions = pal) + mapview(hamburg)
 ```
+
+---
+
+```{r, echo = FALSE}
+library(leafsync)
+m1 = mapview(alt)
+m2 = mapview(jung)
+
+leafsync::sync(m1,m2)
+
+```
+
 
 ---
 # Use the 100m grid-cell resolution data
@@ -396,7 +453,8 @@ cell_vals = values(ham_mask_100m)
 cell_vals[cell_vals > 600] = NA
 values(ham_mask_100m) = cell_vals
 
-mapview(ham_mask_100m)
+mapview(ham_mask_100m, layer.name = "Einwohner in Hamburg")
+
 ```
 
 
