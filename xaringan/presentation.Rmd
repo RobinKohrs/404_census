@@ -3,11 +3,21 @@ title: "Raster Stack with german census data"
 date: "`r Sys.Date()`"
 output:
   xaringan::moon_reader:
+    css: ["footer-header.css", "default.css"]
     nature:
       titleslideClass: ["right", "top", "my-title"]
       countIncrementalSlides: false
     yolo: true
 ---
+
+layout: true
+  
+<div class="my-header"><span>28.11.2020 - Deutsche Zensus Daten im RasterStack in R </span></div>
+
+<div class="my-footer"><span>404</span></div> 
+
+---
+
 # Struktur der Präsentation
 
 ```{r libs, include=FALSE}
@@ -214,12 +224,14 @@ res(ger_stack)
  
 - `RasterBrick` kann nur eine (multilyer-) Datei als Quelle haben 
 
-- `RasterStack` kann aus verschiedenen Datein (Layern) zusammengestellt werden
+- `RasterStack` kann aus verschiedenen Datein (Layern) zusammengestellt werden.
+  > a RasterStack is a list of RasterLayer objects with the same extent and resolution <sub>2</sub>
 
 - Funtionen, die mit `RasterStack` und `RasterBrick` arbeiten können, geben normalerweise einen `RasterBrick` zurück
 
 .footnote[
 [1] [Hijmans, 2019](https://rspatial.org/raster/spatial/4-rasterdata.html)
+[2] [Lovelace, 2019: S:](https://geocompr.robinlovelace.net/spatial-class.html#raster-data)
 ]
 
 ---
@@ -388,7 +400,7 @@ mapview(alt, col.regions = pal) + mapview(jung, col.regions = pal) + mapview(ham
 
 ---
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
 library(leafsync)
 m1 = mapview(alt)
 m2 = mapview(jung)
@@ -474,11 +486,170 @@ ggplot() +
 
 ---
 
-# Tmap
+# Tmap 
+
+## Quick tmap `qtm()`
 
 ```{r}
 
+names(ham_mask)
+
+tmap_mode("view")
+
+tmap::qtm(ham_mask[["hh_gr"]])
+
+
+
 ```
+
+
+---
+
+
+
+```{r}
+ham_stack = raster::stack(ham_mask)
+names(ham_stack)
+einw = tm_shape(ham_mask[["Einwohner"]]) + tm_raster(title = "Einwohner", palette = pal)
+fr_a = tm_shape(ham_mask[["fr_a"]]) + tm_raster(title = "Frauenanteil", palette = pal)
+alt_d = tm_shape(ham_mask[["alt_d"]]) + tm_raster(title = "Altersdurchschnitt", palette = pal)
+hh_gr = tm_shape(ham_mask[["hh_gr"]]) + tm_raster(title = "Haushaltsgroesse", palette = pal)
+
+
+einw + fra + alt + gr + tm_layout(title = "Map with 8 Layers from the Census")
+
+
+```
+---
+
+
+```{r}
+
+
+# Create New RasterLayer
+einwohner = raster::subset(ham_mask, "Einwohner")
+frauenanteil = raster::subset(ham_mask, "fr_a")
+altersdurchschnitt = raster::subset(ham_mask, "alt_d")
+haushaltsgroesse = raster::subset(ham_mask, "hh_gr")
+unter_18 = raster::subset(ham_mask, "u_18")
+ueber_65 = raster::subset(ham_mask, "ue65")
+auslaender = raster::subset(ham_mask, "ausl")
+leerstand = raster::subset(ham_mask, "leer")
+
+
+
+# create new einw RasterLayer RAT
+levels(einwohner)[[1]] = cbind(levels(einwohner)[[1]], Anteil = c("3-250", "250-500", "500-2000", "2000-4000", "4000-8000", ">8000"))
+levels(einwohner) = subset(levels(einwohner)[[1]], select = c(1,3))
+
+
+# Create new frauenanteil RAT-Column
+levels(frauenanteil)[[1]] = cbind(levels(frauenanteil)[[1]], Anteil = c("0-40", "40-47", "47-53", "53-60", ">60"))
+levels(frauenanteil) = subset(levels(frauenanteil)[[1]], select = c(1,3))
+
+# Create new altersdurchschnitt RAT Column
+levels(altersdurchschnitt)[[1]] = cbind(levels(altersdurchschnitt)[[1]], Anteil = c("0-40", "0-42", "42-44", "44-47", ">47"))
+levels(altersdurchschnitt) = subset(levels(altersdurchschnitt)[[1]], select = c(1,3))
+
+# create new haushaltsgröße RAT-COlumn
+levels(haushaltsgroesse)[[1]] = cbind(levels(haushaltsgroesse)[[1]], Anteil = c("1-2", "2-2.5", "2.5-3", "3-3.5", ">3.5"))
+levels(haushaltsgroesse)[[1]] = subset(levels(haushaltsgroesse)[[1]], select = c(1,3))
+
+# create new unter_10 RAT-Column
+levels(unter_18)[[1]] = cbind(levels(unter_18)[[1]], Anteil = c("0", "0-15", "15-20", "20-25", ">25"))
+levels(unter_18) = subset(levels(unter_18)[[1]], select = c(1,3))
+
+# create new ueber_65 RAT-Column 
+levels(ueber_65)[[1]] = cbind(levels(ueber_65)[[1]], Anteil = c("0", "0-15", "15-20", "20-25", ">25"))
+levels(ueber_65) = subset(levels(ueber_65)[[1]], select = c(1,3))
+
+# create new auslaender RAT Columns
+levels(auslaender)[[1]] = cbind(levels(auslaender)[[1]], Anteil = c("0", "0-4", "4-8", "8-20", ">20"))
+levels(auslaender) = subset(levels(auslaender)[[1]], select = c(1,3))
+
+# create new leerstand RAT column
+levels(leerstand)[[1]] = cbind(levels(leerstand)[[1]], Anteil = c("0-1", "1-3", "3-5", "5-10", ">10"))
+levels(leerstand) = subset(levels(leerstand)[[1]], select = c(1,3))
+
+```
+
+
+
+```{r}
+
+
+p1 = tm_shape(einwohner) +
+  tm_raster(legend.show = TRUE, palette = pal, title = "Einwohner pro 1x1km", group = "einwohner") +
+   tm_layout(outer.margins = rep(0.01, 4), 
+            inner.margins = rep(0, 4)) +
+  tm_legend(bg.color = "white")
+  
+p2 = tm_shape(frauenanteil) +
+  tm_raster(legend.show = TRUE, palette = pal, title = "Frauenanteil pro 1x1km", group = "frauenanteil") +
+   tm_layout(outer.margins = rep(0.01, 4), 
+            inner.margins = rep(0, 4)) +
+  tm_legend(bg.color = "white")
+
+p3 = tm_shape(altersdurchschnitt) +
+  tm_raster(legend.show = TRUE, palette = pal, title = "Altersdurchschnitt pro 1x1km", group = "altersdurchschnitt") +
+   tm_layout(outer.margins = rep(0.01, 4), 
+            inner.margins = rep(0, 4)) +
+  tm_legend(bg.color = "white")
+
+p4 = tm_shape(haushaltsgroesse) +
+  tm_raster(legend.show = TRUE, palette = pal, title = "Haushaltsgröße pro 1x1km", group = "haushaltsgröße") +
+   tm_layout(outer.margins = rep(0.01, 4), 
+            inner.margins = rep(0, 4)) +
+  tm_legend(bg.color = "white")
+
+p5 = tm_shape(unter_18) +
+  tm_raster(legend.show = TRUE, palette = pal, title = "Anteil u18 pro 1x1km", group = "unter 18") +
+   tm_layout(outer.margins = rep(0.01, 4), 
+            inner.margins = rep(0, 4)) +
+  tm_legend(bg.color = "white")
+
+p6 = tm_shape(ueber_65) +
+  tm_raster(legend.show = TRUE, palette = pal, title = "Anteil ü65 pro 1x1km", group = "über 65") +
+   tm_layout(outer.margins = rep(0.01, 4), 
+            inner.margins = rep(0, 4)) +
+  tm_legend(bg.color = "white")
+
+p7 = tm_shape(auslaender) +
+  tm_raster(legend.show = TRUE, palette = pal, title = "Anteil Ausländer pro 1x1km", group = "ausländer") +
+   tm_layout(outer.margins = rep(0.01, 4), 
+            inner.margins = rep(0, 4)) +
+  tm_legend(bg.color = "white")
+
+p8 = tm_shape(leerstand) +
+  tm_raster(legend.show = TRUE, palette = pal, title = "Leerstand pro 1x1km", group = "leerstand") +
+   tm_layout(outer.margins = rep(0.01, 4), 
+            inner.margins = rep(0, 4)) +
+  tm_legend(bg.color = "white")
+
+
+```
+
+
+
+```{r}
+
+tm = p1 +p2 +p3 +p4 +p5 +p6 +p7 +p8 + tm_layout(title = "Map of 8 single Layers with tmap and Leaflet")
+
+tm %>% 
+  tmap_leaflet() %>% 
+  leaflet::hideGroup(c("frauenanteil", "altersdurchschnitt", "haushaltsgröße", "unter 18", "über 65", "ausländer", "leerstand"))
+
+
+
+```
+
+
+
+---
+# RasterMath
+
+- Overlay
+...
 
 
 ---

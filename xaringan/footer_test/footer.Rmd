@@ -1,0 +1,35 @@
+---
+title: "Presentation Ninja"
+subtitle: "⚔<br/>with xaringan"
+author: "Yihui Xie"
+institute: "RStudio, Inc."
+date: "2016/12/12 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    css: ["footer-header.css", "default.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+layout: true
+  
+<div class="my-header"><span>Präsentation</span></div>
+
+<div class="my-footer"><span>xaringan power yolo</span></div> 
+
+---
+
+# new slide
+
+---
+
+# Another new slide
+
+--
+
+another point
+
+--
