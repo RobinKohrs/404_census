@@ -14,22 +14,18 @@ output:
       countIncrementalSlides: false
 ---
 
-layout: true
-  
-<div class="my-header"><span>Präsentation</span></div>
+.pull-left[
 
-<div class="my-footer"><span>xaringan power yolo</span></div> 
+```{r}
+#code here
+```
 
----
+]
 
-# new slide
+.pull-right[
+```{r}
+#code here
+```
 
----
 
-# Another new slide
-
---
-
-another point
-
---
+]

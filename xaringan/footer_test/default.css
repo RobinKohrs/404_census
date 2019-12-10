@@ -32,14 +32,16 @@ a, a > code {
   width: 75%;
   float: right;
   padding-top: 1em;
+  background-color: green;
 }
 .pull-left {
   float: left;
-  width: 47%;
+  width: 49%;
 }
 .pull-right {
   float: right;
-  width: 47%;
+  width: 49%;
+  background-color: lightblue;
 }
 .pull-right ~ * {
   clear: both;

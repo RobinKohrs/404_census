@@ -90,19 +90,6 @@ Source: [Xie, Y. (2019). The Ultimate Infinite Moon Reader for xaringan Slides](
 # Was ist der Zensus?
 
 
-
----
-
-class: center, middle, upper
-
-# Was ist ein `RasterStack` ?
-
->  "RasterStack is a list of RasterLayer objects with the same extent and resolution" <sup>1</sup>
-
-.footnote[
-[1] [Lovelace et al. 2018 S: ]()
-]
-  
 ---
 
 # Wo bekommen man die Daten her?
@@ -170,6 +157,111 @@ census_clean = dplyr::mutate_all(census_new, ~ifelse(. %in% c(-1, -9), NA, .))
 
 ---
 
+# Was ist ein `RasterStack` ?
+
+>  "RasterStack is a list of RasterLayer objects with the same extent and resolution" <sup>1</sup>
+
+.footnote[
+[1] [Lovelace et al. 2018 S: ]()
+]
+
+---
+  
+# Rasterdaten in R
+
+- Kontinuierliche Oberflächen
+
+- Rasterwerte können vom Typ `numeric`, `integer`, `logical` oder `factor` sein
+  + nicht baer vom typ `character` (um character-werte zu benutzen vorher in `factor` konvertieren)
+  
+---
+  
+## Raster als Kategorielle Variabel
+
+- Überprüfen ob `raster` kategoriell ist mit: `is.factor(bsp_raster)`
+
+- Falls ja, dann sind die Raster Zellenwerte Indexwerte die andere Werte referenzieren, welche im `RAT` stehen
+
+- `RAT` is ein `data.frame`, der die Daten des Rasters mit anderen Daten verbindet 
+
+- Erste Spalte normalerweise die `ID`, welche nicht verändert werden sollte 
+
+- Übrigen Spalten als können von beliebigem Typ sein
+
+- `levels()` um `RAT` anzusehen und verändern
+
+- `ratify()` und `as.factor` um raster mit `RAT` zu erstellen
+
+---
+
+ **Beispiel aus der Dokumentation des raster-paket** <sub>1</sub>
+
+```{r}
+# Raster erstellen, dass nicht kategoriell ist
+set.seed(2020)
+r = raster(nrow = 10, ncol = 10)
+values(r) = runif(ncell(r)) * 10
+
+# is.factor evaluiert zu FALSE
+is.factor(r)
+
+# kategorielles Raster erstellen
+f = as.factor(round(r))
+
+# is.factor evaluiert zu TRUE
+is.factor(f)
+
+# RAT extranhieren und verändern, levels gibt eine Liste zurück, deswegen [[1]]
+rat = levels(f)[[1]]
+rat$bstaben =  letters[10:20]
+
+# RAT zurückschreiben
+levels(f) = rat
+
+```
+
+.footnote[
+[1][Hijmans, 2019](https://cran.r-project.org/web/packages/raster/raster.pdf)
+]
+---
+
+.pull-left[
+```{r}
+r
+```
+]
+
+.pull-right[
+```{r}
+f
+```
+
+]
+
+---
+- ## Zellenwerte eines `RasterLayers` extrahieren
+
+  + `bsp_raster[1,1]` gibt eine eindeutige ID für die Zelle der ersten Zeile und Spalte zrück
+  + Über diese ID kann man im `RAT` den eigentlichen Wert der Zelle nachsehen
+  
+---
+
+## RasterStack und RasterBrick <sub>1</sub>
+ 
+- `RasterBrick` kann nur eine (multilyer-) Datei als Quelle haben 
+
+- `RasterStack` kann aus verschiedenen Datein (Layern) zusammengestellt werden.
+  > a RasterStack is a list of RasterLayer objects with the same extent and resolution <sub>2</sub>
+
+- Funtionen, die mit `RasterStack` und `RasterBrick` arbeiten können, geben normalerweise einen `RasterBrick` zurück
+
+.footnote[
+[1] [Hijmans, 2019](https://rspatial.org/raster/spatial/4-rasterdata.html)
+[2] [Lovelace, 2019: S:](https://geocompr.robinlovelace.net/spatial-class.html#raster-data)
+]
+
+
+---
 ## Von .csv zu RasterStack
 
 ```{r}
@@ -190,14 +282,34 @@ class(rast_brick)
 # Write Raster
 writeRaster(rast_brick, "../data/raster/tif/gridcell1km.grd", mode = "wb", overwrite = T, format = "raster")
 
+```
+
+
+
+---
+
+```{r, include = FALSE}
 # Read RasterStack
 ger_stack = stack("../data/raster/tif/gridcell1km.grd")
 ```
 
-
 ```{r}
 class(ger_stack)
 ```
+
+---
+
+# **Layer von einem RasterStack extranhieren**
+
+  + `raster::subet(ger_stack, "Einwohner)`
+  + `ger_stack[["Einwohner"]]`
+  + `ger_stack$Einwohner`
+  
+```{r}
+ger_stack[["Einwohner"]]@data@attributes
+```
+
+
 ---
 
 
@@ -216,25 +328,16 @@ ger_stack
 nlayers(ger_stack)
 res(ger_stack)
 ```
+---
+
+```{r}
+
+```
+
 
 
 ---
 
-## RasterStack und RasterBrick <sub>1</sub>
- 
-- `RasterBrick` kann nur eine (multilyer-) Datei als Quelle haben 
-
-- `RasterStack` kann aus verschiedenen Datein (Layern) zusammengestellt werden.
-  > a RasterStack is a list of RasterLayer objects with the same extent and resolution <sub>2</sub>
-
-- Funtionen, die mit `RasterStack` und `RasterBrick` arbeiten können, geben normalerweise einen `RasterBrick` zurück
-
-.footnote[
-[1] [Hijmans, 2019](https://rspatial.org/raster/spatial/4-rasterdata.html)
-[2] [Lovelace, 2019: S:](https://geocompr.robinlovelace.net/spatial-class.html#raster-data)
-]
-
----
 
 ```{r plot}
 plot(ger_stack[["Einwohner"]])
