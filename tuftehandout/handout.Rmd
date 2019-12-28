@@ -1,6 +1,6 @@
 ---
-title: "Visualisation of the German Census Data"
-subtitle: "the `raster`-package and it's main concepts"
+title: "Gitterzellenbasierte Ergebnisse des deutschen Zensus 2011"
+subtitle: 
 author: "Robin Kohrs"
 date: "28-01-2020"
 output:
@@ -41,7 +41,7 @@ knitr::include_graphics("img/xaringan.png")
 # Xaringan
 
 - Ermöglicht es mit  RMarkdown-Syntax Präsentationen zu erstellen
-- Basiert auf dem JavaScript-tool `remark.js` 
+- Basiert auf dem JavaScript-Tool `remark.js` 
 - RStudio addin "Infinite Moon Reader" erstellt Live-Updates bei Änderungen im RMarkdown-Dokuement
 
 ```yaml
@@ -49,7 +49,6 @@ knitr::include_graphics("img/xaringan.png")
 title: "A  Presentation"
 output:
   xaringan::moon_reader:
-    yolo: true
 ---
 ```
 
@@ -65,8 +64,9 @@ knitr::include_graphics("img/ergebnisse.png")
 # Der Zensus und seine Daten
 
 
-- letzter durchgeführter Zensus in 2011 (nächster in 2021)
-- Daten zu Bevölkerung, Erwerbstätigkeit, Gebäude- und WOhnungsbestand häufig in .csv-format
+- Europaweite Volkszählung in 2011 (nächste in 2021)
+- Daten zu Bevölkerung, Erwerbstätigkeit, Gebäude- und Wohnungsbestand 
+- Registergestütztes Verfahren
 - Gittenzellenbasierte Ergebnisse entweder im 100m-Gitter oder 1km-Gitter
 
 # Das `raster`-package
@@ -95,10 +95,10 @@ test = raster(nrows = 6, ncols = 6, res = 0.5,
 
 # Beispiel mit Zensusdaten aus 2011
 
-- Zunächst wird das `.csv-file eingelsen`
-- Dann werden die wichtigen Variablen ausgewählt. Wichtig: *X* und *Y* müssen in der 1. und 2. Spalte sein
+- Zunächst wird das `.csv'-file eingelsen
+- Selektion wichtigen Variablen. Wichtig: *X* und *Y* müssen in der 1. bzw. 2. Spalte stehen
 - Anschließend werden die fehlenden Werte mir `NA` kodiert
-- Zu letzt wird der `data.frame` in einen `RasterBrick` konvertiert
+- Zu letzt wird der `data.frame` mittels der Funktion `rasterFromXYZ` in einen `RasterBrick` konvertiert
 
 *****
 
@@ -119,7 +119,7 @@ rast_brick = rasterFromXYZ(census_clean, crs = st_crs(3035)$proj4string)
 ```
 *****
 
-- Als Nächstes wird das Objekt der Klasse `Rasterbrick`zu einem`RasterStack`  
+- Als Nächstes wird das Objekt der Klasse `Rasterbrick` zu einem Objekt der Klasse`RasterStack` kovertiert
 - Außerdem wird es auf den Extent des `sf`-objektes `ham_crop` zugeschnitten und dann mit `ham_mask` maskiert
 
 *****
