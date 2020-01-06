@@ -12,13 +12,11 @@ output:
 
 layout: true
   
-<div class="my-header"><span>28.11.2020 - Deutsche Zensus Daten im RasterStack in R </span></div>
+<div class="my-header"><span>28.11.2020 - Deutsche Zensus Daten im RasterStack </span></div>
 
 <div class="my-footer"><span>404</span></div> 
 
 ---
-
-# Struktur der Präsentation
 
 ```{r libs, include=FALSE}
 library(dplyr)
@@ -35,18 +33,28 @@ library(here)
 library(rasterVis)
 library(viridis)
 library(geojsonsf)
+library(mapview)
 ```
 
+# Struktur der Präsentation
 
 --
 
 Was ist Xaringan?
 
-Was ist ein `RasterStack`?
+--
 
 Was ist der Zensus?
 
+--
+
+Was ist ein `RasterStack`?
+
+--
+
 Wie sieht die Datenlage aus?
+
+--
 
 Anwendungsbeispiel
 
@@ -90,12 +98,29 @@ Source: [Xie, Y. (2019). The Ultimate Infinite Moon Reader for xaringan Slides](
 
 # Was ist der Zensus?
 
+- Europaweite Volkszählung im Jahre 2011
 
+- Erfassung von "Basisdaten" <sub>1</sub>
+
+-  Ermittlung von Einwohnerzahlen des Bundes, der Länder und der Gemeinden
+
+- Gitterzellenbasierte Auswertung wurden erst 2 Jahre nach Stichtag rechtlich ermöglicht <sub>1</sub>
+
+.footnote[
+[1] [zensus2011.de/Methode](https://www.zensus2011.de/DE/Zensus2011/Methode/Methode_node.html)
+[2] [Neutze, Michael (2015)](https://www.zensus2011.de/SharedDocs/Downloads/DE/Publikationen/Aufsaetze_Archiv/2015_02_Destatis_GitterbasierteAuswertungen.pdf?__blob=publicationFile&v=3)
+]
+
+???
+Warum so wichtig? --> zahlreiche Rechtscorschirften (wie der Länderfinanzausgleich beziehen sich auf diese Werte)
+
+---
+![zensus_methode](img/methode.png)
 ---
 
 # Wo bekommen man die Daten her?
 
-100m
+1km
 ```{r, eval = FALSE}
 # Link for data at 1km resolution
 url_1km = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv_Zensusatlas_klassierte_Werte_1km_Gitter.zip;jsessionid=1C3BBC82F13D65F0DC4689BA428846F4.1_cid380?__blob=publicationFile&v=8"
@@ -103,7 +128,7 @@ url_1km = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/De
 
 oder
 
-1km 
+100m 
 ```{r eval = FALSE}
 url_100m = "https://www.zensus2011.de/SharedDocs/Downloads/DE/Pressemitteilung/DemografischeGrunddaten/csv_Bevoelkerung_100m_Gitter.zip?__blob=publicationFile&v=3"
 ```
@@ -127,9 +152,10 @@ str(census)
 
 ---
 
-# Beschreibung des Datensatz
+### Beschreibung des Datensatz
 
-![plot](img/excel.png)
+![plot](img/excel.PNG)
+
 
 ---
 
@@ -158,7 +184,7 @@ census_clean = dplyr::mutate_all(census_new, ~ifelse(. %in% c(-1, -9), NA, .))
 
 ---
 
-# Was ist ein `RasterStack` ?
+# Was ist ein `RasterStack`?
 
 >  "RasterStack is a list of RasterLayer objects with the same extent and resolution" <sup>1</sup>
 
@@ -173,13 +199,13 @@ census_clean = dplyr::mutate_all(census_new, ~ifelse(. %in% c(-1, -9), NA, .))
 - Kontinuierliche Oberflächen
 
 - Rasterwerte können vom Typ `numeric`, `integer`, `logical` oder `factor` sein
-  + nicht baer vom typ `character` (um character-werte zu benutzen vorher in `factor` konvertieren)
+  + nicht aber vom typ `character` (um character-werte zu benutzen vorher in `factor` konvertieren)
   
 ---
   
 ## Raster als Kategorielle Variabel
 
-- Überprüfen ob `raster` kategoriell ist mit: `is.factor(bsp_raster)`
+- Überprüfen ob `raster` kategoriell ist mit: `is.factor(<bsp_raster>)`
 
 - Falls ja, dann sind die Raster Zellenwerte Indexwerte die andere Werte referenzieren, welche im `RAT` stehen
 
@@ -195,7 +221,7 @@ census_clean = dplyr::mutate_all(census_new, ~ifelse(. %in% c(-1, -9), NA, .))
 
 ---
 
- **Beispiel aus der Dokumentation des raster-paket** <sub>1</sub>
+ **Beispiel aus der Dokumentation des raster-paket**
 
 ```{r}
 # Raster erstellen, dass nicht kategoriell ist
@@ -221,9 +247,6 @@ levels(f) = rat
 
 ```
 
-.footnote[
-[1][Hijmans, 2019](https://cran.r-project.org/web/packages/raster/raster.pdf)
-]
 ---
 
 .pull-left[
@@ -240,14 +263,16 @@ f
 ]
 
 ---
-- ## Zellenwerte eines `RasterLayers` extrahieren
+## Zellenwerte eines `RasterLayers` extrahieren
 
-  + `bsp_raster[1,1]` gibt eine eindeutige ID für die Zelle der ersten Zeile und Spalte zrück
+  + `bsp_raster[1,1]` gibt eine eindeutige ID für die Zelle der ersten Zeile und Spalte zurück
+  
   + Über diese ID kann man im `RAT` den eigentlichen Wert der Zelle nachsehen
   
 ---
 
-## RasterStack und RasterBrick <sub>1</sub>
+## RasterStack und RasterBrick
+<sub>1</sub>
  
 - `RasterBrick` kann nur eine (multilyer-) Datei als Quelle haben 
 
@@ -270,7 +295,7 @@ names(st_crs(3035))
 ```
 
 ```{r}
-# make it a RasterBrick
+# load as RasterBrick
 rast_brick = rasterFromXYZ(census_clean, crs = st_crs(3035)$proj4string)
 ```
 
@@ -289,7 +314,7 @@ writeRaster(rast_brick, "../data/raster/tif/gridcell1km.grd", mode = "wb", overw
 
 ---
 
-```{r, include = FALSE}
+```{r readstack}
 # Read RasterStack
 ger_stack = stack("../data/raster/tif/gridcell1km.grd")
 ```
@@ -300,7 +325,7 @@ class(ger_stack)
 
 ---
 
-# **Layer von einem RasterStack extranhieren**
+### **Layer von einem RasterStack extranhieren**
 
   + `raster::subet(ger_stack, "Einwohner)`
   + `ger_stack[["Einwohner"]]`
@@ -357,7 +382,7 @@ plot(ger_stack[["Einwohner"]])
 
 # Croppen und Masken mittels eines Shapefiles
 
-```{r results='hide'}
+```{r results='hide', include=FALSE}
 ger_wgs = st_read("../data/shape/ger_utm_wgs84/VG250_Bundeslaender.shp")
 ger_3035 = st_transform(ger_wgs, 3035)
 hamburg = ger_3035 %>% dplyr::filter(GEN == "Hamburg")
@@ -392,11 +417,10 @@ hamburg_wgs = st_transform(hamburg_crop_sf, 4326)
 leaflet() %>%
   setView(10, 53.6, zoom = 9) %>% 
   addProviderTiles('Stamen.Terrain',group='Stamen Terrain') %>%
-  addRasterImage(einwohner , colors = pal, opacity = 0.6, group = "Einwohner") %>%
   addPolygons(data = hamburg_wgs, group = "Hamburg", color = "red") %>% 
   addLayersControl(
     baseGroups = c("Stamen Terrain"),
-    overlayGroups = c("Einwohner", "Hamburg"),
+    overlayGroups = c("Hamburg"),
     options = layersControlOptions(collapsed = FALSE)) %>% 
    hideGroup(c("Einwohner")) 
   
@@ -405,9 +429,9 @@ leaflet() %>%
 
 ---
 
-# Modyfying a raster in R: Crop und Mask <sub>1</sub>
+# Raster Croppen und Maskieren <sub>1</sub>
 
--- 
+--
 
 - `crop()`: erstellt Subset von einem `raster`-Object auf der Basis des `extent` eines `raster*`, `sf` oder `sp`-objekt
 
@@ -415,6 +439,7 @@ leaflet() %>%
 
 - `mask()`: verwirft alle Zellen in einem `Raster*`-Objekt, die `NA` in einem anderen sind. 
 
+--
 .footnote[
 [1][Hijmans, R J (2019)](https://rspatial.org/raster/spatial/8-rastermanip.html)
 ]
@@ -495,14 +520,9 @@ leaflet() %>%
   addLegend(colors = pal, labels = levels(alt)[[1]]$percentage)
 ```
 
-# Mapview 
-
-```{r, echo=FALSE}
-library(mapview)
-mapview(alt, col.regions = pal) + mapview(jung, col.regions = pal) + mapview(hamburg)
-```
-
 ---
+## `leafsync`
+<br>
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
 library(leafsync)
@@ -515,7 +535,7 @@ leafsync::sync(m1,m2)
 
 
 ---
-# Use the 100m grid-cell resolution data
+### 100m Auflösung
 
 ```{r, include=FALSE}
 # Read in 100m grid-cell raster
@@ -576,7 +596,7 @@ mapview(ham_mask_100m, layer.name = "Einwohner in Hamburg")
 
 ---
 
-# ggplot2 for Raster plotting
+### ggplot2 for Raster plotting
 
 ```{r, echo=FALSE}
 # Convert Raster to dataframe in order to plot withh ggplot
@@ -590,28 +610,20 @@ ggplot() +
 
 ---
 
-# Tmap 
+### Tmap - **Quick tmap `qtm()`**
 
-## Quick tmap `qtm()`
+```{r view, include=FALSE}
+tmap_mode("view")
+```
 
 ```{r}
-
-names(ham_mask)
-
-tmap_mode("view")
-
 tmap::qtm(ham_mask[["hh_gr"]])
-
-
-
 ```
 
 
 ---
 
-
-
-```{r}
+```{r, include=FALSE}
 ham_stack = raster::stack(ham_mask)
 names(ham_stack)
 einw = tm_shape(ham_mask[["Einwohner"]]) + tm_raster(title = "Einwohner", palette = pal)
@@ -624,10 +636,10 @@ einw + fr_a + alt_d + hh_gr + tm_layout(title = "Map with 8 Layers from the Cens
 
 
 ```
----
 
 
-```{r, echo = FALSE}
+
+```{r, include = FALSE}
 
 
 # Create New RasterLayer
@@ -643,7 +655,7 @@ leerstand = raster::subset(ham_mask, "leer")
 
 
 # create new einw RasterLayer RAT
-levels(einwohner)[[1]] = cbind(levels(einwohner)[[1]], Anteil = c("3-250", "250-500", "500-2000", "2000-4000", "4000-8000", ">8000"))
+levels(einwohner)[[1]] = cbind(levels(einwohner)[[1]], Anteil = c("0-250", "250-500", "500-2000", "2000-4000", "4000-8000", ">8000"))
 levels(einwohner) = subset(levels(einwohner)[[1]], select = c(1,3))
 
 
@@ -679,8 +691,7 @@ levels(leerstand) = subset(levels(leerstand)[[1]], select = c(1,3))
 
 
 
-```{r, echo=FALSE}
-
+```{r, include=FALSE}
 
 p1 = tm_shape(einwohner) +
   tm_raster(legend.show = TRUE, palette = pal, title = "Einwohner pro 1x1km", group = "einwohner") +
@@ -733,18 +744,17 @@ p8 = tm_shape(leerstand) +
 
 ```
 
+---
 
+# map 
 
-```{r}
+```{r map8}
 
 tm = p1 +p2 +p3 +p4 +p5 +p6 +p7 +p8 + tm_layout(title = "Map of 8 single Layers with tmap and Leaflet")
 
 tm %>% 
   tmap_leaflet() %>% 
   leaflet::hideGroup(c("frauenanteil", "altersdurchschnitt", "haushaltsgröße", "unter 18", "über 65", "ausländer", "leerstand"))
-
-
-
 ```
 
 
@@ -757,9 +767,9 @@ tm %>%
 
 
 ---
-# Jena
+## Jena
 
-```{r, echo = FALSE}
+```{r jena, include = FALSE}
 url = "https://opendata.jena.de/data/ortsteile.geojson"
 destfile = "data/shape/jena/jena.geojson"
 
@@ -793,8 +803,9 @@ jena_mask_100m = mask(jena100, jena_3035)
 
 
 pal2 = viridis(5)
+```
 
-
+```{r}
 # plot it with tmap
 leaflet() %>% 
   addTiles() %>% 
@@ -811,8 +822,6 @@ leaflet() %>%
     options = layersControlOptions(collapsed = FALSE)) %>% 
    hideGroup(c("Einwohner", "Frauenanteil", "Altersdurchschnitt", "Unter 18", "Leerstand", "jena_100m")) %>% 
   addLegend(colors = pal2, labels = levels(jena_mask)[[2]]$VALUE)
-
-
 ```
 
 
