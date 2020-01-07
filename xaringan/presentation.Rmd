@@ -1,5 +1,5 @@
 ---
-title: "Raster Stack with german census data"
+title: "Gitterzellen, RasterStack und der Zensus 2011"
 date: "`r Sys.Date()`"
 output:
   xaringan::moon_reader:
@@ -17,6 +17,7 @@ layout: true
 <div class="my-footer"><span>404</span></div> 
 
 ---
+
 
 ```{r libs, include=FALSE}
 library(dplyr)
@@ -106,19 +107,21 @@ Source: [Xie, Y. (2019). The Ultimate Infinite Moon Reader for xaringan Slides](
 
 - Gitterzellenbasierte Auswertung wurden erst 2 Jahre nach Stichtag rechtlich ermöglicht <sub>1</sub>
 
+- Zensus ist in Bezug auf Personendaten eine Vollerhebung
+
 .footnote[
 [1] [zensus2011.de/Methode](https://www.zensus2011.de/DE/Zensus2011/Methode/Methode_node.html)
 [2] [Neutze, Michael (2015)](https://www.zensus2011.de/SharedDocs/Downloads/DE/Publikationen/Aufsaetze_Archiv/2015_02_Destatis_GitterbasierteAuswertungen.pdf?__blob=publicationFile&v=3)
 ]
 
 ???
-Warum so wichtig? --> zahlreiche Rechtscorschirften (wie der Länderfinanzausgleich beziehen sich auf diese Werte)
+Warum so wichtig? --> zahlreiche Rechtsvorschirften (wie der Länderfinanzausgleich) beziehen sich auf diese Werte
 
 ---
 ![zensus_methode](img/methode.png)
 ---
 
-# Wo bekommen man die Daten her?
+# Wo kommen die Daten her?
 
 1km
 ```{r, eval = FALSE}
@@ -502,7 +505,7 @@ knitr::include_graphics("img/alt_raster.png")
 ---
 # Leaflet
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=10, fig.height=6}
 pal=viridis(5)
 
 
@@ -616,7 +619,7 @@ ggplot() +
 tmap_mode("view")
 ```
 
-```{r}
+```{r, fig.height=6, fig.width=10}
 tmap::qtm(ham_mask[["hh_gr"]])
 ```
 
@@ -746,7 +749,7 @@ p8 = tm_shape(leerstand) +
 
 ---
 
-# map 
+# Combining the map
 
 ```{r map8}
 
@@ -795,6 +798,9 @@ jena_3035 = st_transform(jena, crs = 3035)
 jena_crop2 = crop(x = ger_stack, y = extent(jena_3035))
 jena_mask = mask(jena_crop2, jena_3035)
 
+
+# For Presentation
+#ger_100m = raster("data/raster/tif/gridcell_100m.tif")
 
 
 # Take the 100m RasterGridCell --> jena hat to be in the same crs
